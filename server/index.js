@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from "ws";
-import { generateId } from "./helper.js";
+import { createUser, createMessage } from "./helper.js";
 
 const PORT = 8080;
 const wss = new WebSocketServer({ port: PORT });
@@ -16,23 +16,19 @@ wss.on("connection", (ws) => {
     try {
       data = JSON.parse(raw);
     } catch {
-      return ws.send(JSON.stringify({ type: "error", message: "Invalid JSON" }));
+      return send(ws, { type: "error", message: "Invalid JSON" });
     }
 
     // 1) User joins
     if (data.type === "join") {
       const existingIds = [...clients.values()].map(obj => obj.id);
-      const id = generateId(existingIds);
-      const username = "anon";
-      const user = { id: id, username: username };
+      const user = createUser(existingIds, ["pickle", "olive", "pear", "fern", "seaweed", "mint", "lime", "sage", "jade"]);
       clients.set(ws, user);
 
       const userList = [...clients.values()];
 
-      ws.send(JSON.stringify({ type: "history", messages: messages }));
-
-      ws.send(JSON.stringify({ type: "users", users: userList, thisUser: user }));
-
+      send(ws, { type: "history", messages: messages });
+      send(ws, { type: "users", users: userList, thisUser: user });
       broadcast({ type: "user_joined", user: user, users: userList }, ws);
     }
 
@@ -41,15 +37,7 @@ wss.on("connection", (ws) => {
       const user = clients.get(ws);
       if (!user) return;
 
-      const now = new Date();
-      const msg = {
-        id: nextMessageId++,
-        sender: user.username,
-        senderId: user.id,
-        message: data.text,
-        timestamp: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        date: now.toLocaleDateString([], { day: "2-digit", month: "short", year: "2-digit" }),
-      };
+      const msg = createMessage(nextMessageId++, user, data.text);
 
       messages.push(msg);
       broadcast({ type: "message", message: msg });
@@ -62,13 +50,11 @@ wss.on("connection", (ws) => {
 
       const newUsername = data.newUsername;
       if (newUsername.length > 10 || !newUsername) return;
-
       user.username = newUsername;
 
       const userList = [...clients.values()];
 
-      ws.send(JSON.stringify({ type: "users", users: userList, thisUser: user }));
-
+      send(ws, { type: "users", users: userList, thisUser: user });
       broadcast({ type: "users", users: userList }, ws);
     }
   });
@@ -83,12 +69,18 @@ wss.on("connection", (ws) => {
 });
 
 function broadcast(payload, exclude = null) {
+  /* send to everyone (allow exclusion) */
   const json = JSON.stringify(payload);
   for (const client of wss.clients) {
     if (client !== exclude && client.readyState === WebSocket.OPEN) {
       client.send(json);
     }
   }
+}
+
+function send(ws, payload) {
+  /* send to thisUser */
+  ws.send(JSON.stringify(payload));
 }
 
 console.log(`WebSocket server running on ws://localhost:${PORT}`);
