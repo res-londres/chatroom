@@ -13,7 +13,11 @@ function Sidebar({ thisUser, otherUsers, isOpen, onClose }) {
       </header>
       <div className="flex min-h-0 flex-1 flex-col px-2">
         <div className="flex items-center justify-between border-b border-[#D4D7DD] py-4">
-          <ActiveUser username={thisUser.username} id={thisUser.id} />
+          {thisUser ? (
+            <ActiveUser username={thisUser.username} id={thisUser.id} />
+          ) : (
+            <span className="text-[#65676B]">Connecting…</span>
+          )}
           <span className="icon-[ph--note-pencil-bold] text-[#65676B]"></span>
         </div>
         <div className="flex min-h-0 flex-col gap-2 overflow-y-auto py-4">
