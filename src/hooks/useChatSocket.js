@@ -42,5 +42,12 @@ export function useChatSocket(url) {
     }
   }, []);
 
-  return { messages, users, thisUser, sendMessage };
+  const changeUsername = useCallback((newUsername) => {
+    const ws = wsRef.current;
+    if (ws?.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "username_change", newUsername: newUsername }));
+    }
+  }, []);
+
+  return { messages, users, thisUser, sendMessage, changeUsername };
 }

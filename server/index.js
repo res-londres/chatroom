@@ -27,17 +27,13 @@ wss.on("connection", (ws) => {
       const user = { id: id, username: username };
       clients.set(ws, user);
 
-      // Send history to the newcomer only
+      const userList = [...clients.values()];
+
       ws.send(JSON.stringify({ type: "history", messages: messages }));
 
-      // Tell everyone else someone joined
-      broadcast(
-        { type: "user_joined", user, users: [...clients.values()] },
-        ws
-      );
+      ws.send(JSON.stringify({ type: "users", users: userList, thisUser: user }));
 
-      // Send the full user list to the newcomer
-      ws.send(JSON.stringify({ type: "users", users: [...clients.values()], thisUser: user }));
+      broadcast({ type: "user_joined", user: user, users: userList }, ws);
     }
 
     // 2) Chat message
@@ -57,6 +53,23 @@ wss.on("connection", (ws) => {
 
       messages.push(msg);
       broadcast({ type: "message", message: msg });
+    }
+
+    // 3) Username change
+    if (data.type === "username_change") {
+      const user = clients.get(ws);
+      if (!user) return;
+
+      const newUsername = data.newUsername;
+      if (newUsername.length > 10 || !newUsername) return;
+
+      user.username = newUsername;
+
+      const userList = [...clients.values()];
+
+      ws.send(JSON.stringify({ type: "users", users: userList, thisUser: user }));
+
+      broadcast({ type: "users", users: userList }, ws);
     }
   });
 

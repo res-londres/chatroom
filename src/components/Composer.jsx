@@ -12,8 +12,8 @@ function Composer({ onSend }) {
   const handleKeyDown = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      const value = event.target.value.trim();
-      sendMessage(value);
+      const msg = event.target.value.trim();
+      sendMessage(msg);
     }
   };
 

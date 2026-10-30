@@ -6,7 +6,7 @@ import { useChatSocket } from "./hooks/useChatSocket";
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { messages, users, thisUser, sendMessage } = useChatSocket("ws://localhost:8080");
+  const { messages, users, thisUser, sendMessage, changeUsername } = useChatSocket("ws://localhost:8080");
 
   const otherUsers = thisUser
   ? users.filter((u) => u.id !== thisUser.id)
@@ -27,6 +27,7 @@ function App() {
           otherUsers={otherUsers}
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
+          changeUsername={changeUsername}
         />
         <main className="flex flex-1 flex-col">
           <MessageArea messages={messages} />
