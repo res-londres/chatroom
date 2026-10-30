@@ -30,7 +30,7 @@ function App() {
           changeUsername={changeUsername}
         />
         <main className="flex flex-1 flex-col">
-          <MessageArea messages={messages} />
+          <MessageArea messages={messages} thisUser={thisUser} />
           <Composer onSend={sendMessage} />
         </main>
       </div>
