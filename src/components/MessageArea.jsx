@@ -7,6 +7,7 @@ function MessageArea({ messages }) {
         <Message
           key={message.id}
           sender={message.sender}
+          senderId={message.senderId}
           timestamp={message.timestamp}
           date={message.date}
           message={message.message}

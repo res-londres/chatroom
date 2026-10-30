@@ -1,4 +1,4 @@
-function ActiveUser({ username, id }) {
+function ActiveUser({ id, username }) {
   return (
     <div className="flex items-baseline justify-between">
       <span>{username}</span>

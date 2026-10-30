@@ -1,8 +1,11 @@
-function Message({ sender, timestamp, date, message }) {
+function Message({ sender, senderId, timestamp, date, message }) {
   return (
     <div className="flex flex-col">
       <div className="flex justify-between px-2 text-[#65676B]">
-        <span>{sender}</span>
+        <div>
+          <span>{sender}</span>
+          <span className="ml-2 text-[75%]">{senderId}</span>
+        </div>
         <span>
           {timestamp} | {date}
         </span>
