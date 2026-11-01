@@ -28,12 +28,12 @@ wss.on("connection", (ws) => {
         user = JSON.parse(existingUser);
         clients.set(ws, user);
       } else {
-        const existingIds = [...clients.values()].map(obj => obj.id);
+        const existingIds = getUserList().map(obj => obj.id);
         user = createUser(existingIds, defaultUsernames);
         clients.set(ws, user);
       }
 
-      const userList = [...clients.values()];
+      const userList = getUserList();
 
       send(ws, { type: "history", messages: messages });
       send(ws, { type: "users", users: userList, thisUser: user });
@@ -60,7 +60,7 @@ wss.on("connection", (ws) => {
       if (newUsername.length > 10 || !newUsername) return;
       user.username = newUsername;
 
-      const userList = [...clients.values()];
+      const userList = getUserList();
 
       send(ws, { type: "users", users: userList, thisUser: user });
       broadcast({ type: "users", users: userList }, ws);
@@ -71,7 +71,7 @@ wss.on("connection", (ws) => {
     const user = clients.get(ws);
     clients.delete(ws);
     if (user) {
-      broadcast({ type: "user_left", user, users: [...clients.values()] });
+      broadcast({ type: "user_left", user, users: getUserList() });
     }
   });
 });
@@ -89,6 +89,15 @@ function broadcast(payload, exclude = null) {
 function send(ws, payload) {
   /* send to thisUser */
   ws.send(JSON.stringify(payload));
+}
+
+function getUserList() {
+  const seen = new Set();
+  return [...clients.values()].filter((user) => {
+    if (seen.has(user.id)) return false;
+    seen.add(user.id);
+    return true;
+  });
 }
 
 console.log(`WebSocket server running on ws://localhost:${PORT}`);
