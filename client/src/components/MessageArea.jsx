@@ -25,7 +25,7 @@ function MessageArea({ messages, thisUser }) {
             senderId={message.senderId}
             timestamp={message.timestamp}
             date={message.date}
-            message={message.message}
+            content={message.content}
           />
         ))
         : <div className="flex-1 flex justify-center flex-col items-center text-[#65676B]">

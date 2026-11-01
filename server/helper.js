@@ -27,14 +27,13 @@ export function createUser(existingIds, defaultUsernames) {
   }
 }
 
-export function createMessage(id, user, msg) {
-  const now = new Date();
+export function createMessage(row) {
+  const date = new Date(row.created_at);
   return {
-    id: id,
-    sender: user.username,
-    senderId: user.id,
-    message: msg,
-    timestamp: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    date: now.toLocaleDateString([], { day: "2-digit", month: "short", year: "2-digit" }),
+    sender: row.sender,
+    senderId: row.sender_id,
+    content: row.content,
+    timestamp: date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    date: date.toLocaleDateString([], { day: "2-digit", month: "short", year: "2-digit" }),
   };
 }

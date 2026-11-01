@@ -1,18 +1,39 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { createUser, createMessage } from "./helper.js";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { persistSession: false } }
+);
 
 const PORT = 8080;
 const wss = new WebSocketServer({ port: PORT });
 
 const clients = new Map(); /* ws -> { id, username } */
-const messages = []; /* [{ id, sender, message, timestamp, date }] */
+const messages = []; /* [{ id, sender, content, timestamp, date }] */
 const defaultUsernames = ["pickle", "olive", "pear", "fern", "seaweed", "mint", "lime", "sage", "jade"];
 let nextMessageId = 1;
+
+
+const { data: rows, error: loadError } = await supabase
+  .from("messages")
+  .select("*")
+  .order("created_at", { ascending: true })
+  .limit(10);
+
+if (loadError) {
+  console.error("Failed to load history:", loadError);
+} else {
+  messages.push(...rows.map(createMessage));
+  console.log(`Loaded ${messages.length} messages from database`);
+}
 
 wss.on("connection", (ws) => {
   console.log("New connection");
 
-  ws.on("message", (raw) => {
+  ws.on("message", async (raw) => {
     let data;
     try {
       data = JSON.parse(raw);
@@ -45,8 +66,21 @@ wss.on("connection", (ws) => {
       const user = clients.get(ws);
       if (!user) return;
 
-      const msg = createMessage(nextMessageId++, user, data.text);
+      const { data: row, error } = await supabase
+          .from("messages")
+          .insert([{
+            sender_id: user.id,
+            sender: user.username,
+            content: data.text,
+          }])
+          .select()
+          .single();
+      if (error) {
+        console.log("Error inserting message:", error);
+        return;
+      }
 
+      const msg = createMessage(row);
       messages.push(msg);
       broadcast({ type: "message", message: msg });
     }
