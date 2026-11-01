@@ -4,8 +4,9 @@ import { createUser, createMessage } from "./helper.js";
 const PORT = 8080;
 const wss = new WebSocketServer({ port: PORT });
 
-const clients = new Map(); // ws -> { id, username }
-const messages = []; // [{ id, sender, message, timestamp, date }]
+const clients = new Map(); /* ws -> { id, username } */
+const messages = []; /* [{ id, sender, message, timestamp, date }] */
+const defaultUsernames = ["pickle", "olive", "pear", "fern", "seaweed", "mint", "lime", "sage", "jade"];
 let nextMessageId = 1;
 
 wss.on("connection", (ws) => {
@@ -19,11 +20,18 @@ wss.on("connection", (ws) => {
       return send(ws, { type: "error", message: "Invalid JSON" });
     }
 
-    // 1) User joins
+    /* 1) User joins */
     if (data.type === "join") {
-      const existingIds = [...clients.values()].map(obj => obj.id);
-      const user = createUser(existingIds, ["pickle", "olive", "pear", "fern", "seaweed", "mint", "lime", "sage", "jade"]);
-      clients.set(ws, user);
+      const existingUser = data.user;
+      let user;
+      if (existingUser) {
+        user = JSON.parse(existingUser);
+        clients.set(ws, user);
+      } else {
+        const existingIds = [...clients.values()].map(obj => obj.id);
+        user = createUser(existingIds, defaultUsernames);
+        clients.set(ws, user);
+      }
 
       const userList = [...clients.values()];
 
@@ -32,7 +40,7 @@ wss.on("connection", (ws) => {
       broadcast({ type: "user_joined", user: user, users: userList }, ws);
     }
 
-    // 2) Chat message
+    /* 2) Chat message */
     if (data.type === "message") {
       const user = clients.get(ws);
       if (!user) return;
@@ -43,7 +51,7 @@ wss.on("connection", (ws) => {
       broadcast({ type: "message", message: msg });
     }
 
-    // 3) Username change
+    /* 3) Username change */
     if (data.type === "username_change") {
       const user = clients.get(ws);
       if (!user) return;

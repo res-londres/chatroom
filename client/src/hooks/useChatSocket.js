@@ -11,7 +11,8 @@ export function useChatSocket(url) {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      ws.send(JSON.stringify({ type: "join" }));
+      const user = localStorage.getItem("user");
+      send(ws, { type: "join", user: user });
     };
 
     ws.onmessage = (event) => {
@@ -28,7 +29,10 @@ export function useChatSocket(url) {
       }
       if (data.type === "users") {
         setUsers(data.users);
-        setThisUser(data.thisUser);
+        if (data.thisUser) {
+          setThisUser(data.thisUser);
+          localStorage.setItem("user", JSON.stringify(data.thisUser));
+        }
       }
     };
 
@@ -38,16 +42,20 @@ export function useChatSocket(url) {
   const sendMessage = useCallback((text) => {
     const ws = wsRef.current;
     if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: "message", text: text }));
+      send(ws, { type: "message", text: text });
     }
   }, []);
 
   const changeUsername = useCallback((newUsername) => {
     const ws = wsRef.current;
     if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: "username_change", newUsername: newUsername }));
+      send(ws, { type: "username_change", newUsername: newUsername });
     }
   }, []);
 
   return { messages, users, thisUser, sendMessage, changeUsername };
+}
+
+function send(ws, payload) {
+  ws.send(JSON.stringify(payload));
 }
