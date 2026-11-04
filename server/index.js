@@ -14,19 +14,18 @@ const wss = new WebSocketServer({ port: PORT });
 const clients = new Map(); /* ws -> { id, username } */
 const messages = []; /* [{ id, sender, content, timestamp, date }] */
 const defaultUsernames = ["pickle", "olive", "pear", "fern", "seaweed", "mint", "lime", "sage", "jade"];
-let nextMessageId = 1;
-
 
 const { data: rows, error: loadError } = await supabase
   .from("messages")
   .select("*")
-  .order("created_at", { ascending: true })
-  .limit(10);
+  .order("created_at", { ascending: false })
+  .limit(20);
 
 if (loadError) {
   console.error("Failed to load history:", loadError);
 } else {
   messages.push(...rows.map(createMessage));
+  messages.reverse(); 
   console.log(`Loaded ${messages.length} messages from database`);
 }
 
