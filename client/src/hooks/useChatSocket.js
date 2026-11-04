@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 export function useChatSocket(url) {
   const wsRef = useRef(null);
   const [messages, setMessages] = useState([]);
+  const [messageAreaState, setMessageAreaState] = useState("loading");
   const [users, setUsers] = useState([]);
   const [thisUser, setThisUser] = useState(null);
 
@@ -13,6 +14,7 @@ export function useChatSocket(url) {
     ws.onopen = () => {
       const user = localStorage.getItem("user");
       send(ws, { type: "join", user: user });
+      send(ws, { type: "load_messages" });
     };
 
     ws.onmessage = (event) => {
@@ -34,6 +36,9 @@ export function useChatSocket(url) {
           localStorage.setItem("user", JSON.stringify(data.thisUser));
         }
       }
+      if (data.type === "message_area_state") {
+        setMessageAreaState(data.state);
+      }
     };
 
     return () => ws.close();
@@ -53,7 +58,7 @@ export function useChatSocket(url) {
     }
   }, []);
 
-  return { messages, users, thisUser, sendMessage, changeUsername };
+  return { messages, users, thisUser, messageAreaState, sendMessage, changeUsername };
 }
 
 function send(ws, payload) {
