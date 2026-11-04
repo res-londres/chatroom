@@ -1,9 +1,14 @@
 import { useRef, useEffect } from "react";
-import Message from "./Message";
+import Message from "../Message";
+import EmptyView from "./EmptyView";
+import ErrorView from "./ErrorView";
+import LoadingView from "./LoadingView";
 
-function MessageArea({ messages, thisUser }) {
+
+function MessageArea({ messages, thisUser, messageAreaState }) {
   const bottomRef = useRef(null);
 
+  /* TODO: change this so that it should scroll when any user sends a message, not just this user, but only if this user is already at the bottom of the message area */
   useEffect(() => {
     if (!thisUser) return;
 
@@ -15,10 +20,13 @@ function MessageArea({ messages, thisUser }) {
     }
   }, [messages, thisUser]);
 
+  if (messageAreaState === "loading") return <LoadingView />;
+  if (messageAreaState === "error") return <ErrorView />;
+  if (messages.length === 0) return <EmptyView />;
+
   return (
     <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-2 md:p-4">
-      {messages.length 
-        ? messages.map((message) => (
+      {messages.map((message) => (
           <Message
             key={message.id}
             sender={message.sender}
@@ -28,11 +36,6 @@ function MessageArea({ messages, thisUser }) {
             content={message.content}
           />
         ))
-        : <div className="flex-1 flex justify-center flex-col items-center text-[#65676B]">
-            <span class="text-2xl icon-[ph--leaf-fill]"></span>
-            <span>No messages yet</span>
-            <span>Send the first one!</span>
-          </div>
       }
       <div ref={bottomRef}></div>
     </div>
