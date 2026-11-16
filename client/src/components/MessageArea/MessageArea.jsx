@@ -1,14 +1,51 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import Message from "../Message";
 import EmptyView from "./EmptyView";
 import ErrorView from "./ErrorView";
 import LoadingView from "./LoadingView";
 
 const BOTTOM_THRESHOLD = 8;
+const TEN_MINUTES_MS = 10 * 60 * 1000;
+
+function toMilliseconds(message) {
+  if (message.createdAt) {
+    const milliseconds = Date.parse(message.createdAt);
+    if (!Number.isNaN(milliseconds)) return milliseconds;
+  }
+  return null;
+}
+
+function computeShowMetadata(messages) {
+  const flags = [];
+  let lastShownTime = null;
+
+  messages.forEach((message, index) => {
+    const previous = messages[index - 1];
+    const sameSender = Boolean(previous) && previous.senderId === message.senderId;
+
+    const time = toMilliseconds(message);
+    const withinTenMinutes =
+      lastShownTime !== null &&
+      time !== null &&
+      Math.abs(time - lastShownTime) < TEN_MINUTES_MS;
+
+    const showMetadata = !(sameSender && withinTenMinutes);
+    flags.push(showMetadata);
+
+    if (showMetadata) lastShownTime = time;
+  });
+
+  return flags;
+}
 
 function MessageArea({ messages, messageAreaState }) {
   const containerRef = useRef(null);
   const isAtBottomRef = useRef(true);
+
+  const showMetadataFlags = useMemo(
+    () => computeShowMetadata(messages),
+    [messages]
+  );
 
   const handleScroll = () => {
     const container = containerRef.current;
@@ -34,7 +71,7 @@ function MessageArea({ messages, messageAreaState }) {
       onScroll={handleScroll}
       className="flex flex-1 flex-col gap-2 overflow-y-auto p-2 md:p-4"
     >
-      {messages.map((message) => (
+      {messages.map((message, index) => (
         <Message
           key={message.id}
           sender={message.sender}
@@ -42,6 +79,7 @@ function MessageArea({ messages, messageAreaState }) {
           timestamp={message.timestamp}
           date={message.date}
           content={message.content}
+          showMetadata={showMetadataFlags[index]}
         />
       ))}
     </div>
